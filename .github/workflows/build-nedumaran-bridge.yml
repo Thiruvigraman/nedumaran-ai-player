@@ -1,0 +1,42 @@
+name: Build NedumaranBridge
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "NedumaranBridge-0.1.0-source.zip"
+      - ".github/workflows/build-nedumaran-bridge.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Extract bridge source
+        run: |
+          mkdir -p bridge
+          unzip -q NedumaranBridge-0.1.0-source.zip -d bridge
+
+      - name: Build plugin
+        working-directory: bridge
+        run: |
+          chmod +x gradlew 2>/dev/null || true
+          if [ -f gradlew ]; then ./gradlew clean build; else gradle clean build; fi
+
+      - name: Upload plugin JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: NedumaranBridge-0.1.0
+          path: bridge/build/libs/*.jar
+          if-no-files-found: error
